@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: Module-MakefilePL-Parse
-version: 0.11
+version: 0.12
 author:
   - Robert Rothenberg <rrwo at cpan.org>
 abstract: parse required modules from Makefile.PL
@@ -15,5 +15,5 @@ build_requires:
 provides:
   Module::MakefilePL::Parse:
     file: lib/Module/MakefilePL/Parse.pm
-    version: 0.11
+    version: 0.12
 generated_by: Module::Build version 0.25_02

@@ -2,7 +2,7 @@ package Module::MakefilePL::Parse;
 
 use 5.006001;
 use strict;
-use warnings;
+use warnings::register __PACKAGE__;
 
 require Exporter;
 use Carp;
@@ -18,7 +18,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
 our @EXPORT = qw( );
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 our $DEBUG  = 0;
 
@@ -27,8 +27,8 @@ sub new {
 
   my $script = shift;
 
-  $script =~ s/\#.*\n/\n/g;             # remove comments (not greedy?)(
-  $script =~ s/\s\s+/ /g;               # remove extra spaces
+  $script =~ s/\#.*\n/\n/g;             # remove comments (not greedy?)
+  $script =~ s/\s\s+/ /g;               # normalize spaces
 
   my $self = {
     SCRIPT    => $script,
@@ -42,7 +42,7 @@ sub new {
     $self->{INSTALLER} = TYPE_MODULEINSTALL;
   }
   else {
-    croak "Only simple Makefile.PL scripts which use ExtUtils::MakeMaker are supported";
+    croak "Only scripts which use ExtUtils::MakeMaker or Module::Install are supported";
   }
   bless $self, $class;
 
@@ -79,6 +79,7 @@ sub _cleanup {
     }
     return $hashref;
   } else {
+# TODO: carp "Expected HASH reference", if (warnings::enabled);
     return;
   }
 }
@@ -94,6 +95,8 @@ sub _parse {
 
     my $key_start = index $script, 'WriteMakefile';
     if ($key_start < 0) {
+      carp "Error: cannot find call to WriteMakefile",
+	if (warnings::enabled);
       return;
     }
 
@@ -105,6 +108,8 @@ sub _parse {
 
       my $block_start = index $script, '{', $key_start;
       if ($block_start < $key_start) {
+	carp "Error: cannot find left bracket after PREREQ_PM",
+	  if (warnings::enabled);
 	return;
       }
 
@@ -112,30 +117,39 @@ sub _parse {
       {
 	my $op = substr($script, $key_start, $block_start-$key_start);
 	unless ($op =~ /^[\'\"]?PREREQ_PM[\'\"]?\s*(=>|\,)\s*$/) {
+	  carp "Error: unexpected syntax found", if (warnings::enabled);
 	  return;
 	}
       }
 
       my $prereq_pm = extract_bracketed(substr($script, $block_start), '{}' );
       unless ($prereq_pm) {
+	carp "Error: unable to extract prerequisites: no balanced brackets",
+	  if (warnings::enabled);
 	return;
       }
 
-      # Surround bareword module names with quotes so that eval works properly
+      # Surround bareword module names with quotes so that eval works
+      # properly. This regex will not work for code that is specified
+      # as "{qw( module 0 )}"
 
       $prereq_pm =~ s/([\,\s\{])(\w+)(::\w+)+\s*(=>|\,|\'?\d)/$1 '$2$3' $4/g;
 
       $self->{_PREREQ_PM} = $prereq_pm;
 
       if ($prereq_pm =~ /[\&\$\@\%\*]/) {
-	carp "Warning: possible variable references";
+	carp "Warning: possible variable references",
+	  if (warnings::enabled);
       }
 
       my $hashref;
       eval "\$hashref = $prereq_pm;";
       return _cleanup($hashref);
-
     }
+  }
+  elsif ($self->{INSTALLER} == TYPE_MODULEBUILD) {
+    croak "Unsupported type";
+    return;
   }
   elsif ($self->{INSTALLER} == TYPE_MODULEINSTALL) {
 
@@ -167,6 +181,7 @@ sub _parse {
     return _cleanup($hashref);
   }
   else {
+    croak "Unsupported type";
     return;
   }
 }
@@ -174,7 +189,8 @@ sub _parse {
 sub install_type {
   my $self = shift;
   if (@_) {
-    carp "Exra arguments ignored";
+    carp "Exra arguments ignored",
+      if (warnings::enabled);
   }
   if ($self->{INSTALLER} == TYPE_MAKEMAKER) {
     return 'ExtUtils::MakeMaker';

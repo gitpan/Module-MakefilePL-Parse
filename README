@@ -46,19 +46,12 @@ DESCRIPTION
     Please see the module documentation for more details.
 
 REVISION HISTORY
-    The following changes were made since v0.05:
+    The following changes were made since v0.11:
 
-    0.11  Mon Aug  2 2004
-	- added install_type method
-	- bug fix: quotes are stripped from module names
-	- bug fix: version number is properly retrieved from
-	  Module::Install prerequisites
-	- more tests
-	- minor changes to POD
-
-    0.10  Sat Jul 31 2004
-	- uses Text::Balanced for extracting balanced strings
-	- support for parsing Makefiles which use Module::Install
+    0.12  Fri Sep  3 2004
+	- corrected typo in error message
+	- registers warnings
+	- added more warnings and diagnostic errors
 
     For a more thorough revision history, see the Changes file included
     with this distribution.

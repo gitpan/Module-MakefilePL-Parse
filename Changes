@@ -1,5 +1,10 @@
 Revision history for Perl extension Module::MakefilePL::Parse.
 
+0.12  Fri Sep  3 2004
+	- corrected typo in error message
+	- registers warnings
+	- added more warnings and diagnostic errors
+
 0.11  Mon Aug  2 2004
 	- added install_type method
 	- bug fix: quotes are stripped from module names
@@ -7,6 +12,7 @@ Revision history for Perl extension Module::MakefilePL::Parse.
 	  Module::Install prerequisites
 	- more tests
 	- minor changes to POD
+	- hooks for Module::Build support (not implemented)
 
 0.10  Sat Jul 31 2004
 	- uses Text::Balanced for extracting balanced strings

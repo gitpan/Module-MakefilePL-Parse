@@ -1,6 +1,6 @@
 #-*- mode: perl;-*-
 
-use Test::More tests => 73;
+use Test::More tests => 76;
 use Test::Warn;
 
 use_ok('Module::MakefilePL::Parse');
@@ -264,12 +264,15 @@ WriteMakefile(
   my $s = qq{
 use ExtUtils::MakeMaker;
 WriteMakefile(
-    'PREREQ_PM'	=> \%some_hash, 
+    'PREREQ_PM'	=> \\\%some_hash, 
     'ANOTHER'   => { foo => 'bar', },
 );
 };
 
-  my $m = Module::MakefilePL::Parse->new( $s );
+  my $m;
+  warning_is {
+    $m = Module::MakefilePL::Parse->new( $s );
+  } "Error: unexpected syntax found";
   ok(!defined $m);
 }
 
@@ -347,7 +350,9 @@ WriteMakefile(
 
   my $m;
   eval {
-    $m = Module::MakefilePL::Parse->new( $s );
+    warning_is {
+      $m = Module::MakefilePL::Parse->new( $s );
+    } "Error: cannot find left bracket after PREREQ_PM";
   };
 
   ok(!defined $m);
@@ -366,7 +371,9 @@ WriteMakefile(
 
   my $m;
   eval {
-    $m = Module::MakefilePL::Parse->new( $s );
+    warning_is {
+      $m = Module::MakefilePL::Parse->new( $s );
+    } "Error: cannot find left bracket after PREREQ_PM";
   };
   ok(!defined $m);
 }
