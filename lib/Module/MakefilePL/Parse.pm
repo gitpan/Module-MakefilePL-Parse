@@ -8,7 +8,7 @@ require Exporter;
 use Carp;
 use Text::Balanced qw( extract_bracketed );
 
-use enum qw(TYPE_MAKEMAKER=1 TYPE_MODULEINSTALL);
+use enum qw(TYPE_MAKEMAKER=1 TYPE_MODULEINSTALL TYPE_MODULEBUILD);
 
 our @ISA = qw(Exporter);
 
@@ -18,7 +18,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
 our @EXPORT = qw( );
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 our $DEBUG  = 0;
 
@@ -61,6 +61,25 @@ sub required {
   }
   else {
     return $self->{REQUIRED};
+  }
+}
+
+# Cleanup module names (if surrounded by quotes, etc.) and make sure
+# version is a number.
+
+sub _cleanup {
+  my $hashref = shift;
+  if (ref($hashref) eq 'HASH') {
+    foreach my $module (keys %$hashref) {
+      my $version = ($hashref->{$module} += 0); # change to number
+      if ($module =~ /[\'\"](.+)[\'\"]/) {
+	$hashref->{$1} = $version;
+	delete $hashref->{$module};
+      }
+    }
+    return $hashref;
+  } else {
+    return;
   }
 }
 
@@ -114,7 +133,8 @@ sub _parse {
 
       my $hashref;
       eval "\$hashref = $prereq_pm;";
-      return $hashref;
+      return _cleanup($hashref);
+
     }
   }
   elsif ($self->{INSTALLER} == TYPE_MODULEINSTALL) {
@@ -128,8 +148,11 @@ sub _parse {
       if ($start   > $index) {
 	$reqstr = extract_bracketed(substr($script, $start), '()' );
 	if ($reqstr) {
-	  my ($module, $version) = split /(,|=>)/, substr($reqstr,1,-1);
-	  $hashref->{eval $module} = ($version ? (eval $version) : 0);
+	  my ($module, $comma, $version) =
+	    split /(,|=>)/, substr($reqstr,1,-1);
+
+	  $hashref->{eval $module} = 
+	    ((defined $version) ? (eval $version) : 0);
 	}
 	else {
 	  return;
@@ -141,10 +164,25 @@ sub _parse {
       $index   = $index+1;
     }
 
-    return $hashref;
-
+    return _cleanup($hashref);
   }
   else {
+    return;
+  }
+}
+
+sub install_type {
+  my $self = shift;
+  if (@_) {
+    carp "Exra arguments ignored";
+  }
+  if ($self->{INSTALLER} == TYPE_MAKEMAKER) {
+    return 'ExtUtils::MakeMaker';
+  } elsif ($self->{INSTALLER} == TYPE_MODULEINSTALL) {
+    return 'Module::Install';
+  } elsif ($self->{INSTALLER} == TYPE_MODULEBUILD) {
+    return 'Module::Build';
+  } else {
     return;
   }
 }
@@ -163,7 +201,7 @@ Module::MakefilePL::Parse - parse required modules from Makefile.PL
 
   open $fh, 'Makefile.PL';
 
-  $parser = Module::MakefilePL::Parse->new( join("\n", <$fh>) );
+  $parser = Module::MakefilePL::Parse->new( join("", <$fh>) );
 
   $info   = $parser->required;
 
@@ -191,8 +229,16 @@ C<undef> if there is a problem.
 
   $info = $parser->required;
 
-Returns a hash reference to the C<PREREQ_PM> key in the F<Makefile.PL>
-script.
+Returns a hash reference containing the prerequisite modules.  This is
+either the the C<PREREQ_PM> key, or a combination of prerequisites
+specified in C<requires> and C<build_requires> calls in the
+F<Makefile.PL> script (depending on the L</install_type>).
+
+=item install_type
+
+  $module = $parser->install_type;
+
+Returns the module used for installation.
 
 =back
 
@@ -219,7 +265,7 @@ distributions:
   Module::ScanDeps
 
 Note that C<Module::CPANTS::Generator::Prereq> is similar to this
-module, so it's possible that any future work will be merged into
+module, so it is possible that any future work will be merged into
 that project than on maintaining this module.
 
 =head1 AUTHOR

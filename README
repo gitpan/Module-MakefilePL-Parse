@@ -41,16 +41,24 @@ SYNOPSIS
 DESCRIPTION
     The purpose of this module is to determine the required modules for
     older CPAN distributions which do not have META.yml files but use
-    Makefile.PL and ExtUtils::MakeMaker.
-
-    Presumably newer style Makefile.PL files which use Module::Install or
-    Module::Build already have META.yml files in their distributions.
+    Makefile.PL and ExtUtils::MakeMaker or Module::Install.
 
     Please see the module documentation for more details.
 
 REVISION HISTORY
-    The following changes were made since v0.04:
+    The following changes were made since v0.05:
 
+    0.11  Mon Aug  2 2004
+	- added install_type method
+	- bug fix: quotes are stripped from module names
+	- bug fix: version number is properly retrieved from
+	  Module::Install prerequisites
+	- more tests
+	- minor changes to POD
+
+    0.10  Sat Jul 31 2004
+	- uses Text::Balanced for extracting balanced strings
+	- support for parsing Makefiles which use Module::Install
 
     For a more thorough revision history, see the Changes file included
     with this distribution.
@@ -60,16 +68,12 @@ SEE ALSO
     distributions:
 
       Module::CoreList
-      Module::CPANTS::Generator
+      Module::CPANTS::Generator::Prereq
       Module::Info
       Module::Dependency
       Module::Depends
       Module::PrintUsed
       Module::ScanDeps
-
-    Note that 'Module::CPANTS::Generator::Prereq' is similar to this
-    module, so it's possible that any future work will be merged into
-    that project than on maintaining this module.
 
 AUTHOR
     Robert Rothenberg <rrwo at cpan.org>

@@ -1,6 +1,6 @@
 #-*- mode: perl;-*-
 
-use Test::More tests => 49;
+use Test::More tests => 73;
 use Test::Warn;
 
 use_ok('Module::MakefilePL::Parse');
@@ -18,6 +18,7 @@ WriteMakefile(
 
   my $m = Module::MakefilePL::Parse->new( $s );
   ok(defined $m);
+  ok($m->install_type eq 'ExtUtils::MakeMaker');
 
   my $req = $m->required;
   ok(defined $req);
@@ -45,6 +46,7 @@ WriteMakefile(
 
   my $m = Module::MakefilePL::Parse->new( $s );
   ok(defined $m);
+  ok($m->install_type eq 'ExtUtils::MakeMaker');
 
   my $req = $m->required;
   ok(defined $req);
@@ -69,10 +71,12 @@ WriteMakefile(
 
   my $m = Module::MakefilePL::Parse->new( $s );
   ok(defined $m);
+  ok($m->install_type eq 'ExtUtils::MakeMaker');
 
   my $req = $m->required;
   ok(defined $req);
   ok((keys %$req) == 1);
+  ok(eq_hash($req, { 'Test::More' => 0, }));
 }
 
 {
@@ -97,10 +101,12 @@ WriteMakefile
 
   my $m = Module::MakefilePL::Parse->new( $s );
   ok(defined $m);
+  ok($m->install_type eq 'ExtUtils::MakeMaker');
 
   my $req = $m->required;
   ok(defined $req);
   ok((keys %$req) == 2);
+  ok(eq_hash($req, { 'Test::More' => 0, 'enum' => '1.016', }));
 }
 
 {
@@ -118,10 +124,12 @@ WriteMakefile(
 
   my $m = Module::MakefilePL::Parse->new( $s );
   ok(defined $m);
+  ok($m->install_type eq 'ExtUtils::MakeMaker');
 
   my $req = $m->required;
   ok(defined $req);
   ok((keys %$req) == 1);
+  ok(eq_hash($req, { 'Filter::Simple' => 0.78, }));
 }
 
 {
@@ -137,10 +145,12 @@ WriteMakefile(
 
   my $m = Module::MakefilePL::Parse->new( $s );
   ok(defined $m);
+  ok($m->install_type eq 'ExtUtils::MakeMaker');
 
   my $req = $m->required;
   ok(defined $req);
   ok((keys %$req) == 2);
+  ok(eq_hash($req, { 'Test::More'=>0.44, 'File::Temp'=>0.12, }));
 }
 
 {
@@ -156,10 +166,12 @@ WriteMakefile(
 
   my $m = Module::MakefilePL::Parse->new( $s );
   ok(defined $m);
+  ok($m->install_type eq 'ExtUtils::MakeMaker');
 
   my $req = $m->required;
   ok(defined $req);
   ok((keys %$req) == 2);
+  ok(eq_hash($req, { 'Test::More'=>0, 'Filter::Simple'=>0, }));
 }
 
 {
@@ -186,10 +198,12 @@ WriteMakefile(
 
   my $m = Module::MakefilePL::Parse->new( $s );
   ok(defined $m);
+  ok($m->install_type eq 'ExtUtils::MakeMaker');
 
   my $req = $m->required;
   ok(defined $req);
   ok((keys %$req) == 1);
+  ok(eq_hash($req, { 'Class::ISA'=>0.31, }));
 }
 
 
@@ -211,10 +225,17 @@ WriteMakefile(
 
   my $m = Module::MakefilePL::Parse->new( $s );
   ok(defined $m);
+  ok($m->install_type eq 'ExtUtils::MakeMaker');
 
   my $req = $m->required;
   ok(defined $req);
   ok((keys %$req) == 4);
+  ok(eq_hash($req, {
+        'Chemistry::Mol'     => 0.24,
+        'Chemistry::Pattern' => 0.21,
+        'List::Util'         => 0,
+        'Test::More'         => 0,
+    }));
 }
 
 {
@@ -230,10 +251,13 @@ WriteMakefile(
 
   my $m = Module::MakefilePL::Parse->new( $s );
   ok(defined $m);
+  ok($m->install_type eq 'ExtUtils::MakeMaker');
 
   my $req = $m->required;
   ok(defined $req);
   ok((keys %$req) == 2);
+
+  ok(eq_hash($req, { 'Foo::Bar'=>1.1, 'Bo::Baz'=>0, }));
 }
 
 {
@@ -365,9 +389,12 @@ WriteMakefile
 
   my $m = Module::MakefilePL::Parse->new( $s );
   ok(defined $m);
+  ok($m->install_type eq 'ExtUtils::MakeMaker');
+
   my $req = $m->required;
   ok(defined $req);
   ok((keys %$req) == 1);
+  ok(eq_hash($req, { 'DBI'=>1.13, }));
 }
 
 
@@ -384,11 +411,13 @@ build_requires ('Test::More', 0);
 
   my $m = Module::MakefilePL::Parse->new( $s );
   ok(defined $m);
+  ok($m->install_type eq 'Module::Install');
 
 
   my $req = $m->required;
   ok(defined $req);
   ok((keys %$req) == 1);
+  ok(eq_hash($req, { 'Test::More'=>0 }));
 }
 
 
@@ -406,10 +435,20 @@ build_requires  ('Test::More');
 
   my $m = Module::MakefilePL::Parse->new( $s );
   ok(defined $m);
+  ok($m->install_type eq 'Module::Install');
 
   my $req = $m->required;
   ok(defined $req);
   ok((keys %$req) == 3);
+
+#   require Data::Dumper;
+#   print STDERR "\n\n\n", Data::Dumper->Dump([$req]), "\n\n\n";
+
+  ok(eq_hash($req, {
+    'Test::More'     => 0,
+    'Text::Balanced' => 3.14159,
+    'perl'           => 5.004,
+  }));
 }
 
 
