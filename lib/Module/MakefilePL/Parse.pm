@@ -15,7 +15,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
 our @EXPORT = qw( );
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 sub new {
   my $class  = shift;
@@ -95,28 +95,35 @@ sub _parse {
     }
 
     my $level = 1;
+    my $embed = 0;
     my $index = $block_start;
     while ($level && (++$index<length($script))) {
       my $ch = substr($script, $index, 1);
-      $level++, if ($ch eq '{');
+      $level++, if ($ch eq '{'); 
       $level--, if ($ch eq '}');
-      if ($level > 1) {
-	carp "Warning: embedded hash references or code";
-      }
+      $embed = 1, if ($level > 1);
     }
     if ($level) {
+      carp "Missing closing bracket";
       return;
+    }
+    if ($embed) {
+      carp "Warning: embedded hash references or code";
     }
     my $prereq_pm = substr($script, $block_start, ($index-$block_start+1));
 
-    # TODO: check if block contains variables (scalars, arrays) and
-    # give a warning, as appropriate.
-
     # Surround bareword module names with quotes so that eval works properly
 
-    $prereq_pm =~ s/([\,\s\{])(\w+)(::\w+)+\s*=>/$1 '$2$3' =>/g;
+    $prereq_pm =~ s/([\,\s\{])(\w+)(::\w+)+\s*(=>|\,|\'?\d)/$1 '$2$3' $4/g;
 
-    my $hashref   = eval $prereq_pm;
+    $self->{_PREREQ_PM} = $prereq_pm;
+
+    if ($prereq_pm =~ /[\&\$\@\%\*]/) {
+      carp "Warning: possible variable references";
+    }
+
+    my $hashref;
+    eval "\$hashref = $prereq_pm;";
     return $hashref;
   }
 }

@@ -1,5 +1,15 @@
 Revision history for Perl extension Module::MakefilePL::Parse.
 
+0.04  Wed Jul 14 00:05:00 2004
+	- allow less-common forms of defining hash reference:
+ 	  {qw( key val )} and {('key','val')}
+	- parsed string saved for debugging purposes
+	- warning when variable symbols found in PREREQ_PM value
+	- warning when missing closing bracket
+	- other minor code tweaks
+	- additional tests/increased coverage
+	- testing with Test::Warn
+
 0.03  Mon Jul 12 17:29:00 2004
 	- added additional sanity checks to parsing code
 	- added note about copyrighted module snippets from tests

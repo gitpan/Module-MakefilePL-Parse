@@ -11,6 +11,7 @@ my $build = Module::Build->new
      },
      build_requires => {
        'Test::More'                 => 0,
+       'Test::Warn'                 => 0,
      },
      create_makefile_pl => 'traditional',
      dist_author        => 'Robert Rothenberg <rrwo at cpan.org>',

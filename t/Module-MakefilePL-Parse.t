@@ -1,6 +1,7 @@
 #-*- mode: perl;-*-
 
-use Test::More tests => 25;
+use Test::More tests => 41;
+use Test::Warn;
 
 use_ok('Module::MakefilePL::Parse');
 
@@ -189,4 +190,167 @@ WriteMakefile(
   my $req = $m->required;
   ok(defined $req);
   ok((keys %$req) == 1);
+}
+
+
+{
+  my $s = qq{
+use ExtUtils::MakeMaker;
+WriteMakefile(
+    'NAME'             => 'Chemistry::File::SMARTS',
+    'PREREQ_PM'		=> {qw(
+        Chemistry::Mol          0.24
+        Chemistry::Pattern      0.21
+        List::Util              0
+        Test::More              0
+    )}, 
+);
+};
+
+#  print STDERR $s;
+
+  my $m = Module::MakefilePL::Parse->new( $s );
+  ok(defined $m);
+
+  my $req = $m->required;
+  ok(defined $req);
+  ok((keys %$req) == 4);
+}
+
+{
+  my $s = qq{
+use ExtUtils::MakeMaker;
+WriteMakefile(
+    'PREREQ_PM'		=> {
+      'Foo::Bar', 1.1,
+      'Bo::Baz',  0,
+    }, 
+);
+};
+
+  my $m = Module::MakefilePL::Parse->new( $s );
+  ok(defined $m);
+
+  my $req = $m->required;
+  ok(defined $req);
+  ok((keys %$req) == 2);
+}
+
+{
+  my $s = qq{
+use ExtUtils::MakeMaker;
+WriteMakefile(
+    'PREREQ_PM'	=> \%some_hash, 
+    'ANOTHER'   => { foo => 'bar', },
+);
+};
+
+  my $m = Module::MakefilePL::Parse->new( $s );
+  ok(!defined $m);
+}
+
+{
+  my $s = qq{
+use ExtUtils::MakeMaker;
+WriteMakefile(
+    'PREREQ_PM'	=> {
+      'Module' => 0,
+      \$Dynamic => 0,
+    },
+);
+};
+
+  my $m;
+  warning_is {
+    $m = Module::MakefilePL::Parse->new( $s );
+  } "Warning: possible variable references";
+  ok(!defined $m);
+}
+
+{
+  my $s = qq{
+use ExtUtils::MakeMaker;
+WriteMakefile(
+    'PREREQ_PM'	=> {
+      'Module' => sub { return 1; },
+    },
+);
+};
+
+
+  my $m;
+  warning_is {
+    $m = Module::MakefilePL::Parse->new( $s );
+  } "Warning: embedded hash references or code";
+
+  local $TODO = "Undetermined behavior";
+  ok(!defined $m, "May or may not be defined");
+}
+
+{
+  my $s = qq[
+use ExtUtils::MakeMaker;
+WriteMakefile(
+    'PREREQ_PM'	=> {
+      'Module' => 1,
+
+);
+];
+
+  my $m;
+  warning_is {
+    $m = Module::MakefilePL::Parse->new( $s );
+  } "Missing closing bracket";
+
+  ok(!defined $m);
+}
+
+{
+  my $s = qq{
+use Module::Install;
+
+};
+
+  my $m;
+  eval {
+    $m = Module::MakefilePL::Parse->new( $s );
+  };
+  ok(!defined $m);
+}
+
+{
+  my $s = qq{
+use ExtUtils::MakeMaker;
+WriteMakefile(
+    'PREREQ_PM'	=> [
+      'Module', 0,
+    ],
+);
+};
+
+
+  my $m;
+  eval {
+    $m = Module::MakefilePL::Parse->new( $s );
+  };
+
+  ok(!defined $m);
+}
+
+{
+  my $s = qq{
+use ExtUtils::MakeMaker;
+WriteMakefile(
+    'PREREQ_PM'	=> (
+      'Module', 0,
+    ),
+);
+};
+
+
+  my $m;
+  eval {
+    $m = Module::MakefilePL::Parse->new( $s );
+  };
+  ok(!defined $m);
 }

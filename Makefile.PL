@@ -5,7 +5,8 @@ WriteMakefile
           'NAME' => 'Module::MakefilePL::Parse',
           'VERSION_FROM' => 'lib/Module/MakefilePL/Parse.pm',
           'PREREQ_PM' => {
-                           'Test::More' => '0'
+                           'Test::More' => '0',
+                           'Test::Warn' => '0'
                          },
           'INSTALLDIRS' => 'site',
           'PL_FILES' => {}
