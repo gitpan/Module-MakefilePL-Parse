@@ -1,6 +1,6 @@
 #-*- mode: perl;-*-
 
-use Test::More tests => 44;
+use Test::More tests => 49;
 use Test::Warn;
 
 use_ok('Module::MakefilePL::Parse');
@@ -250,6 +250,7 @@ WriteMakefile(
 }
 
 {
+#  local $TODO = "May be ignored by Text::Balanced";
   my $s = qq{
 use ExtUtils::MakeMaker;
 WriteMakefile(
@@ -268,6 +269,8 @@ WriteMakefile(
 }
 
 {
+  local $TODO = "May be ignored by Text::Balanced";
+
   my $s = qq{
 use ExtUtils::MakeMaker;
 WriteMakefile(
@@ -283,11 +286,13 @@ WriteMakefile(
     $m = Module::MakefilePL::Parse->new( $s );
   } "Warning: embedded hash references or code";
 
-  local $TODO = "Undetermined behavior";
+#  local $TODO = "Undetermined behavior";
   ok(!defined $m, "May or may not be defined");
 }
 
 {
+  local $TODO = "May be ignored by Text::Balanced";
+
   my $s = qq[
 use ExtUtils::MakeMaker;
 WriteMakefile(
@@ -302,19 +307,6 @@ WriteMakefile(
     $m = Module::MakefilePL::Parse->new( $s );
   } "Missing closing bracket";
 
-  ok(!defined $m);
-}
-
-{
-  my $s = qq{
-use Module::Install;
-
-};
-
-  my $m;
-  eval {
-    $m = Module::MakefilePL::Parse->new( $s );
-  };
   ok(!defined $m);
 }
 
@@ -373,8 +365,51 @@ WriteMakefile
 
   my $m = Module::MakefilePL::Parse->new( $s );
   ok(defined $m);
+  my $req = $m->required;
+  ok(defined $req);
+  ok((keys %$req) == 1);
+}
+
+
+{
+  my $s = qq{
+use inc::Module::Install;
+
+name           ('only');
+
+include_deps   ('Test::More', 5.004);
+build_requires ('Test::More', 0);
+
+};
+
+  my $m = Module::MakefilePL::Parse->new( $s );
+  ok(defined $m);
+
 
   my $req = $m->required;
   ok(defined $req);
   ok((keys %$req) == 1);
 }
+
+
+{
+  my $s = qq{
+
+use inc::Module::Install;
+
+requires        ('perl' => 5.004);
+requires        ('Text::Balanced', '3.14159');
+
+build_requires  ('Test::More');
+
+};
+
+  my $m = Module::MakefilePL::Parse->new( $s );
+  ok(defined $m);
+
+  my $req = $m->required;
+  ok(defined $req);
+  ok((keys %$req) == 3);
+}
+
+

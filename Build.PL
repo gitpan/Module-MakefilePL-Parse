@@ -6,6 +6,8 @@ my $build = Module::Build->new
      license => 'perl',
      requires => {
        'perl'                       => '5.6.1',
+       'enum'                       => 1.016,
+       'Text::Balanced'             => 0,
      },
      recommends => {
      },

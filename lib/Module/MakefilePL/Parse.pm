@@ -6,6 +6,9 @@ use warnings;
 
 require Exporter;
 use Carp;
+use Text::Balanced qw( extract_bracketed );
+
+use enum qw(TYPE_MAKEMAKER=1 TYPE_MODULEINSTALL);
 
 our @ISA = qw(Exporter);
 
@@ -15,7 +18,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
 our @EXPORT = qw( );
 
-our $VERSION = '0.05';
+our $VERSION = '0.10';
 
 our $DEBUG  = 0;
 
@@ -23,9 +26,6 @@ sub new {
   my $class  = shift;
 
   my $script = shift;
-
-# TODO: filter out comments (AnyLoader.pm has a comment that refers to
-# PREREQ_PM)
 
   $script =~ s/\#.*\n/\n/g;             # remove comments (not greedy?)(
   $script =~ s/\s\s+/ /g;               # remove extra spaces
@@ -36,7 +36,10 @@ sub new {
   };
 
   if ($script =~ /use\s+ExtUtils::MakeMaker/) {
-    $self->{INSTALLER} = qq{ ExtUtils::MakeMaker };
+    $self->{INSTALLER} = TYPE_MAKEMAKER;
+  }
+  elsif ($script =~ /use\s+(inc::)?Module::Install/) {
+    $self->{INSTALLER} = TYPE_MODULEINSTALL;
   }
   else {
     croak "Only simple Makefile.PL scripts which use ExtUtils::MakeMaker are supported";
@@ -64,71 +67,88 @@ sub required {
 sub _parse {
   my $self = shift;
 
-  unless ($self->{INSTALLER} eq qq{ ExtUtils::MakeMaker }) {
-    return;
-  }
   my $script = $self->{SCRIPT};
 
   # Look for first call to WriteMakefile function. Key should be there.
 
-  my $key_start = index $script, 'WriteMakefile';
-  if ($key_start < 0) {
-    return;
-  }
+  if ($self->{INSTALLER} == TYPE_MAKEMAKER) {
 
-  $key_start = index $script, 'PREREQ_PM', $key_start;
-  if ($key_start < 0) {
-    # if no PREREQ_PM, we assume that there are no prereqs
-    return { };
-  }
-  else {
-
-    my $block_start = index $script, '{', $key_start;
-    if ($block_start < $key_start) {
+    my $key_start = index $script, 'WriteMakefile';
+    if ($key_start < 0) {
       return;
     }
 
-    # check that operator between PREREQ_PM and hash reference is valid
-    {
-      my $op = substr($script, $key_start, $block_start-$key_start);
-      unless ($op =~ /^[\'\"]?PREREQ_PM[\'\"]?\s*(=>|\,)\s*$/) {
+    $key_start = index $script, 'PREREQ_PM', $key_start;
+    if ($key_start < 0) {
+      # if no PREREQ_PM, we assume that there are no prereqs
+      return { };
+    } else {
+
+      my $block_start = index $script, '{', $key_start;
+      if ($block_start < $key_start) {
 	return;
       }
+
+      # check that operator between PREREQ_PM and hash reference is valid
+      {
+	my $op = substr($script, $key_start, $block_start-$key_start);
+	unless ($op =~ /^[\'\"]?PREREQ_PM[\'\"]?\s*(=>|\,)\s*$/) {
+	  return;
+	}
+      }
+
+      my $prereq_pm = extract_bracketed(substr($script, $block_start), '{}' );
+      unless ($prereq_pm) {
+	return;
+      }
+
+      # Surround bareword module names with quotes so that eval works properly
+
+      $prereq_pm =~ s/([\,\s\{])(\w+)(::\w+)+\s*(=>|\,|\'?\d)/$1 '$2$3' $4/g;
+
+      $self->{_PREREQ_PM} = $prereq_pm;
+
+      if ($prereq_pm =~ /[\&\$\@\%\*]/) {
+	carp "Warning: possible variable references";
+      }
+
+      my $hashref;
+      eval "\$hashref = $prereq_pm;";
+      return $hashref;
+    }
+  }
+  elsif ($self->{INSTALLER} == TYPE_MODULEINSTALL) {
+
+    my $hashref    = { };
+
+    my $index      = 0;
+    while (($index = index($script, 'requires', $index)) >= 0) {
+      my $reqstr;
+      my $start    = index($script, '(', $index+1);
+      if ($start   > $index) {
+	$reqstr = extract_bracketed(substr($script, $start), '()' );
+	if ($reqstr) {
+	  my ($module, $version) = split /(,|=>)/, substr($reqstr,1,-1);
+	  $hashref->{eval $module} = ($version ? (eval $version) : 0);
+	}
+	else {
+	  return;
+	}
+      }
+      else {
+	return;
+      }
+      $index   = $index+1;
     }
 
-    my $level = 1;
-    my $embed = 0;
-    my $index = $block_start;
-    while ($level && (++$index<length($script))) {
-      my $ch = substr($script, $index, 1);
-      $level++, if ($ch eq '{'); 
-      $level--, if ($ch eq '}');
-      $embed = 1, if ($level > 1);
-    }
-    if ($level) {
-      carp "Missing closing bracket";
-      return;
-    }
-    if ($embed) {
-      carp "Warning: embedded hash references or code";
-    }
-    my $prereq_pm = substr($script, $block_start, ($index-$block_start+1));
-
-    # Surround bareword module names with quotes so that eval works properly
-
-    $prereq_pm =~ s/([\,\s\{])(\w+)(::\w+)+\s*(=>|\,|\'?\d)/$1 '$2$3' $4/g;
-
-    $self->{_PREREQ_PM} = $prereq_pm;
-
-    if ($prereq_pm =~ /[\&\$\@\%\*]/) {
-      carp "Warning: possible variable references";
-    }
-
-    my $hashref;
-    eval "\$hashref = $prereq_pm;";
     return $hashref;
+
+  }
+  else {
+    return;
   }
 }
+
 
 1;
 __END__
@@ -151,7 +171,7 @@ Module::MakefilePL::Parse - parse required modules from Makefile.PL
 
 The purpose of this module is to determine the required modules for
 older CPAN distributions which do not have F<META.yml> files but use
-F<Makefile.PL> and L<ExtUtils::MakeMaker>.
+F<Makefile.PL> and L<ExtUtils::MakeMaker> or L<Module::Install>.
 
 Presumably newer style F<Makefile.PL> files which use L<Module::Install>
 or L<Module::Build> already have F<META.yml> files in their distributions.
@@ -198,8 +218,8 @@ distributions:
   Module::PrintUsed
   Module::ScanDeps
 
-Note that L<Module::CPANTS::Generator::Prereq> does the same thing as
-this module, so it's likely that any future work will be merged into
+Note that C<Module::CPANTS::Generator::Prereq> is similar to this
+module, so it's possible that any future work will be merged into
 that project than on maintaining this module.
 
 =head1 AUTHOR

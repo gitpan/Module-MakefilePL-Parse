@@ -60,16 +60,16 @@ SEE ALSO
     distributions:
 
       Module::CoreList
-      Module::CPANTS::Generator::Prereq
+      Module::CPANTS::Generator
       Module::Info
       Module::Dependency
       Module::Depends
       Module::PrintUsed
       Module::ScanDeps
 
-    Note that '<Module::CPANTS::Generator::Prereq' does the same thing
-    as this module, so it's likely that any future work will be merged
-    into that project than on maintaining this module.
+    Note that 'Module::CPANTS::Generator::Prereq' is similar to this
+    module, so it's possible that any future work will be merged into
+    that project than on maintaining this module.
 
 AUTHOR
     Robert Rothenberg <rrwo at cpan.org>

@@ -1,5 +1,9 @@
 Revision history for Perl extension Module::MakefilePL::Parse.
 
+0.10  Sat Jul 31 2004
+	- uses Text::Balanced for extracting balanced strings
+	- support for parsing Makefiles which use Module::Install
+
 0.05  Thu Jul 23 00:03:00 2004
 	- added hook for DEBUG flag
 	- updated POD
