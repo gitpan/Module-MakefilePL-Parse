@@ -15,14 +15,18 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
 our @EXPORT = qw( );
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 sub new {
   my $class  = shift;
 
   my $script = shift;
 
-  $script =~ s/\s\s+/ /g; # remove extra spaces
+# TODO: filter out comments (AnyLoader.pm has a comment that refers to
+# PREREQ_PM)
+
+  $script =~ s/\#.*\n/\n/g;             # remove comments (not greedy?)(
+  $script =~ s/\s\s+/ /g;               # remove extra spaces
 
   my $self = {
     SCRIPT    => $script,
@@ -63,16 +67,33 @@ sub _parse {
   }
   my $script = $self->{SCRIPT};
 
-  my $key_start = index $script, 'PREREQ_PM';
+  # Look for first call to WriteMakefile function. Key should be there.
+
+  my $key_start = index $script, 'WriteMakefile';
+  if ($key_start < 0) {
+    return;
+  }
+
+  $key_start = index $script, 'PREREQ_PM', $key_start;
   if ($key_start < 0) {
     # if no PREREQ_PM, we assume that there are no prereqs
     return { };
   }
   else {
+
     my $block_start = index $script, '{', $key_start;
     if ($block_start < $key_start) {
       return;
     }
+
+    # check that operator between PREREQ_PM and hash reference is valid
+    {
+      my $op = substr($script, $key_start, $block_start-$key_start);
+      unless ($op =~ /^[\'\"]?PREREQ_PM[\'\"]?\s*(=>|\,)\s*$/) {
+	return;
+      }
+    }
+
     my $level = 1;
     my $index = $block_start;
     while ($level && (++$index<length($script))) {
@@ -87,6 +108,9 @@ sub _parse {
       return;
     }
     my $prereq_pm = substr($script, $block_start, ($index-$block_start+1));
+
+    # TODO: check if block contains variables (scalars, arrays) and
+    # give a warning, as appropriate.
 
     # Surround bareword module names with quotes so that eval works properly
 
@@ -110,7 +134,7 @@ Module::MakefilePL::Parse - parse required modules from Makefile.PL
 
   open $fh, 'Makefile.PL';
 
-  $parser = Module::MakefilePL::Parse->new( join(" ", <$fh>) );
+  $parser = Module::MakefilePL::Parse->new( join("\n", <$fh>) );
 
   $info   = $parser->required;
 
@@ -120,9 +144,8 @@ The purpose of this module is to determine the required modules for
 older CPAN distributions which do not have F<META.yml> files but use
 F<Makefile.PL> and L<ExtUtils::MakeMaker>.
 
-Presumably newer style F<Makefile.PL> files which use
-L<Module::Install> or L<Module::Build> already have F<META.yml> files
-in their distributions.
+Presumably newer style F<Makefile.PL> files which use L<Module::Install>
+or L<Module::Build> already have F<META.yml> files in their distributions.
 
 =head2 Methods
 
@@ -132,7 +155,7 @@ in their distributions.
 
   $parser = new Modile::MakefilePL::Parse( $script );
 
-Parsers a F<Makefile.PL> script and returns an object. Returns
+Parses a F<Makefile.PL> script and returns an object.  Returns
 C<undef> if there is a problem.
 
 =item required
@@ -155,9 +178,14 @@ Do not run this module on untrusted scripts.
 
 =head1 SEE ALSO
 
+These other modules will also provide meta-information about CPAN
+distributions:
+
+  Module::CoreList
   Module::Info
   Module::Dependency
   Module::Depends
+  Module::PrintUsed
   Module::ScanDeps
 
 =head1 AUTHOR
@@ -167,6 +195,11 @@ Robert Rothenberg <rrwo at cpan.org>
 =head1 COPYRIGHT AND LICENSE
 
 Copyright (C) 2004 by Robert Rothenbeg.  All Rights Reserved.
+
+The test script F<Module-MakefilePL-Parse.t> contains small snippets
+(less than a few lines) based on existing F<Makefile.PL> files from
+modules on CPAN.  Those modules are acknowledged in the snippets, and
+the copyrights of those modules belong to their respective authors.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.4 or,

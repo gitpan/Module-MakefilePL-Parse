@@ -1,5 +1,11 @@
 Revision history for Perl extension Module::MakefilePL::Parse.
 
+0.03  Mon Jul 12 17:29:00 2004
+	- added additional sanity checks to parsing code
+	- added note about copyrighted module snippets from tests
+	- comments are removed from script before parsing (rt.cpan.org #6937)
+	- minor revisions to POD
+
 0.02  Sun Jul 11 05:18:00 2004
 	- handle bareword module names in various combinations
 	- allow empty prereqs is no PREREQ_PM key exists
