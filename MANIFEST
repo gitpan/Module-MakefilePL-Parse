@@ -1,0 +1,8 @@
+Build.PL
+Changes
+Makefile.PL
+MANIFEST
+README
+t/Module-MakefilePL-Parse.t
+lib/Module/MakefilePL/Parse.pm
+META.yml                                 Module meta-data (added by MakeMaker)

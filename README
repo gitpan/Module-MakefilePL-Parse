@@ -1,0 +1,32 @@
+NAME
+    Module::MakefilePL::Parse - parse required modules from Makefile.PL
+
+SYNOPSIS
+      use Module::MakefilePL::Parse;
+
+      open $fh, 'Makefile.PL';
+
+      $parser = Module::MakefilePL::Parse->new( join(" ", <$fh>) );
+
+      $info   = $parser->required;
+
+DESCRIPTION
+    The purpose of this module is to determine the required modules for
+    older CPAN distributions which do not have META.yml files but use
+    Makefile.PL and ExtUtils::MakeMaker.
+
+    Presumably newer style Makefile.PL files which use Module::Install or
+    Module::Build already have META.yml files in their distributions.
+
+    Please see the module documentation for more details.
+
+AUTHOR
+    Robert Rothenberg <rrwo at cpan.org>
+
+COPYRIGHT AND LICENSE
+    Copyright (C) 2004 by Robert Rothenbeg. All Rights Reserved.
+
+    This library is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself, either Perl version 5.8.4 or, at
+    your option, any later version of Perl 5 you may have available.
+
