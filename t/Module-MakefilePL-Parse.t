@@ -1,6 +1,6 @@
 #-*- mode: perl;-*-
 
-use Test::More tests => 41;
+use Test::More tests => 44;
 use Test::Warn;
 
 use_ok('Module::MakefilePL::Parse');
@@ -353,4 +353,28 @@ WriteMakefile(
     $m = Module::MakefilePL::Parse->new( $s );
   };
   ok(!defined $m);
+}
+
+
+{
+  my $s = qq{
+use ExtUtils::MakeMaker;
+# See lib/ExtUtils/MakeMaker.pm for details of how to influence
+# the contents of the Makefile that is written.
+
+WriteMakefile
+(
+'DISTNAME'			=> 'DBIx-MSSQLReporter',
+'PREREQ_PM'			=>
+	{
+		DBI			=> '1.13',
+	},
+};
+
+  my $m = Module::MakefilePL::Parse->new( $s );
+  ok(defined $m);
+
+  my $req = $m->required;
+  ok(defined $req);
+  ok((keys %$req) == 1);
 }

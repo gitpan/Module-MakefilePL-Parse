@@ -15,7 +15,9 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
 our @EXPORT = qw( );
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
+
+our $DEBUG  = 0;
 
 sub new {
   my $class  = shift;
@@ -189,11 +191,16 @@ These other modules will also provide meta-information about CPAN
 distributions:
 
   Module::CoreList
+  Module::CPANTS::Generator::Prereq
   Module::Info
   Module::Dependency
   Module::Depends
   Module::PrintUsed
   Module::ScanDeps
+
+Note that L<Module::CPANTS::Generator::Prereq> does the same thing as
+this module, so it's likely that any future work will be merged into
+that project than on maintaining this module.
 
 =head1 AUTHOR
 

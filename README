@@ -1,6 +1,34 @@
 NAME
     Module::MakefilePL::Parse - parse required modules from Makefile.PL
 
+REQUIREMENTS
+    Perl 5.6.1 is required.
+
+    The following modules are required:
+
+      Test::More
+      Test::Warn
+
+Installation
+    Installation can be done using the traditional Makefile.PL or the
+    newer Build.PL methods.
+
+    Using Makefile.PL:
+
+      perl Makefile.PL
+      make
+      make test
+      make install
+
+    (On Windows platforms you should use nmake instead.)
+
+    Using Build.PL (if you have Module::Build installed):
+
+      perl Build.PL
+      perl Build
+      perl Build test
+      perl Build install    
+
 SYNOPSIS
       use Module::MakefilePL::Parse;
 
@@ -21,11 +49,27 @@ DESCRIPTION
     Please see the module documentation for more details.
 
 REVISION HISTORY
+    The following changes were made since v0.04:
 
-    0.02  Sun Jul 11 05:18:00 2004
-	- handle bareword module names in various combinations
-	- allow empty prereqs is no PREREQ_PM key exists
-	- allow arguments to 'use ExtUtils::MakeMaker' call
+
+    For a more thorough revision history, see the Changes file included
+    with this distribution.
+
+SEE ALSO
+    These other modules will also provide meta-information about CPAN
+    distributions:
+
+      Module::CoreList
+      Module::CPANTS::Generator::Prereq
+      Module::Info
+      Module::Dependency
+      Module::Depends
+      Module::PrintUsed
+      Module::ScanDeps
+
+    Note that '<Module::CPANTS::Generator::Prereq' does the same thing
+    as this module, so it's likely that any future work will be merged
+    into that project than on maintaining this module.
 
 AUTHOR
     Robert Rothenberg <rrwo at cpan.org>
