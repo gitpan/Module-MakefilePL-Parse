@@ -15,7 +15,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
 our @EXPORT = qw( );
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub new {
   my $class  = shift;
@@ -29,7 +29,7 @@ sub new {
     INSTALLER => undef,
   };
 
-  if ($script =~ /use\s+ExtUtils::MakeMaker;/) {
+  if ($script =~ /use\s+ExtUtils::MakeMaker/) {
     $self->{INSTALLER} = qq{ ExtUtils::MakeMaker };
   }
   else {
@@ -65,7 +65,8 @@ sub _parse {
 
   my $key_start = index $script, 'PREREQ_PM';
   if ($key_start < 0) {
-    return;
+    # if no PREREQ_PM, we assume that there are no prereqs
+    return { };
   }
   else {
     my $block_start = index $script, '{', $key_start;
@@ -85,7 +86,13 @@ sub _parse {
     if ($level) {
       return;
     }
-    my $hashref = eval substr($script, $block_start, ($index-$block_start+1));
+    my $prereq_pm = substr($script, $block_start, ($index-$block_start+1));
+
+    # Surround bareword module names with quotes so that eval works properly
+
+    $prereq_pm =~ s/([\,\s\{])(\w+)(::\w+)+\s*=>/$1 '$2$3' =>/g;
+
+    my $hashref   = eval $prereq_pm;
     return $hashref;
   }
 }

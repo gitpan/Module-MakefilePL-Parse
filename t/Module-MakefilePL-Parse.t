@@ -1,8 +1,27 @@
 #-*- mode: perl;-*-
 
-use Test::More tests => 10;
+use Test::More tests => 22;
 
 use_ok('Module::MakefilePL::Parse');
+
+{
+  my $s = <<TEST0;
+use 5.006001;
+use ExtUtils::MakeMaker;
+# See lib/ExtUtils/MakeMaker.pm for details of how to influence
+# the contents of the Makefile that is written.
+WriteMakefile(
+    NAME              => 'Module::MakefilePL::Parse',
+);
+TEST0
+
+  my $m = Module::MakefilePL::Parse->new( $s );
+  ok(defined $m);
+
+  my $req = $m->required;
+  ok(defined $req);
+  ok((keys %$req) == 0);
+}
 
 {
   my $s = <<TEST1;
@@ -71,6 +90,65 @@ WriteMakefile
         )
 ;
 TEST3
+
+#  print STDERR $s;
+
+  my $m = Module::MakefilePL::Parse->new( $s );
+  ok(defined $m);
+
+  my $req = $m->required;
+  ok(defined $req);
+  ok((keys %$req) == 2);
+}
+
+{
+  my $s = <<TEST4;
+use ExtUtils::MakeMaker;
+# See lib/ExtUtils/MakeMaker.pm for details of how to influence
+# the contents of the Makefile that is written.
+WriteMakefile(
+    'NAME'		=> 'Acme::Beatnik',
+    'PREREQ_PM'		=> { Filter::Simple => 0.78 }, # e.g., Module::Name => 1.1
+);
+TEST4
+
+#  print STDERR $s;
+
+  my $m = Module::MakefilePL::Parse->new( $s );
+  ok(defined $m);
+
+  my $req = $m->required;
+  ok(defined $req);
+  ok((keys %$req) == 1);
+}
+
+{
+  my $s = <<TEST5;
+use ExtUtils::MakeMaker;
+WriteMakefile(
+     'NAME'             => 'Acme::Chef',
+     'PREREQ_PM'        => {Test::More => 0.44, File::Temp => 0.12}, # e.g., Module::Name => 1.1);
+);
+TEST5
+
+#  print STDERR $s;
+
+  my $m = Module::MakefilePL::Parse->new( $s );
+  ok(defined $m);
+
+  my $req = $m->required;
+  ok(defined $req);
+  ok((keys %$req) == 2);
+}
+
+{
+  my $s = <<TEST6;
+use ExtUtils::MakeMaker;
+WriteMakefile(
+     'NAME'             => 'Acme::Currency',
+     'PREREQ_PM'        => {Test::More=>0,Filter::Simple=>0}, # e.g., Module::Name => 1.1);
+);
+TEST6
 
 #  print STDERR $s;
 

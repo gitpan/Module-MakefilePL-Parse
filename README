@@ -20,6 +20,13 @@ DESCRIPTION
 
     Please see the module documentation for more details.
 
+REVISION HISTORY
+
+    0.02  Sun Jul 11 05:18:00 2004
+	- handle bareword module names in various combinations
+	- allow empty prereqs is no PREREQ_PM key exists
+	- allow arguments to 'use ExtUtils::MakeMaker' call
+
 AUTHOR
     Robert Rothenberg <rrwo at cpan.org>
 

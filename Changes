@@ -1,5 +1,10 @@
 Revision history for Perl extension Module::MakefilePL::Parse.
 
+0.02  Sun Jul 11 05:18:00 2004
+	- handle bareword module names in various combinations
+	- allow empty prereqs is no PREREQ_PM key exists
+	- allow arguments to 'use ExtUtils::MakeMaker' call
+
 0.01  Sun Jul 11 03:32:46 2004
 	- original version; created by h2xs 1.23 with options
 		-n Module::MakefilePL::Parse -v 0.01 -X -b 5.6.1
